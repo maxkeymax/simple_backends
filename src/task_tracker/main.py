@@ -11,19 +11,19 @@ app = FastAPI()
 #     {"id": 2, "title": "Протестировать API", "status": "не начато"},
 # ]
 
-JSON_FILE = 'tasks.json'
+JSON_FILE = "tasks.json"
 
 
 def load_tasks() -> List[Dict]:
     try:
-        with open(JSON_FILE, 'r', encoding='utf-8') as f:
+        with open(JSON_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         return []
-    
+
 
 def save_tasks(tasks: List[Dict]):
-    with open(JSON_FILE, 'w', encoding='utf-8') as f:
+    with open(JSON_FILE, "w", encoding="utf-8") as f:
         json.dump(tasks, f, ensure_ascii=False, indent=2)
 
 
@@ -51,11 +51,11 @@ def update_task(task_id: int, updated_task: Dict):
     return {"error": f"Задача с № {task_id} не найдена"}
 
 
-@app.delete('/tasks/{task_id}')
+@app.delete("/tasks/{task_id}")
 def delete_task(task_id: int):
     tasks = load_tasks()
     for task in tasks:
-        if task['id'] == task_id:
+        if task["id"] == task_id:
             tasks.remove(task)
             save_tasks(tasks)
             return {"message": f"Задача № {task_id} успешно удалена"}
