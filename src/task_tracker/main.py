@@ -20,3 +20,8 @@ tasks = [
 @app.get('/tasks')
 def get_tasks():
     return tasks
+
+@app.post('/task')
+def add_task(new_task: dict):
+    tasks.append(new_task)
+    return {'message': 'Задача успешно добавлена'}
