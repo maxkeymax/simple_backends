@@ -1,62 +1,32 @@
-from fastapi import FastAPI
-from typing import List, Dict
-import json
+from typing import Dict, List
 
+from fastapi import FastAPI, HTTPException
+from .task_storage import TaskStorage
 
 app = FastAPI()
+task_storage = TaskStorage("tasks.json")
 
 
-# tasks = [
-#     {"id": 1, "title": "Написать код для такст-трекера", "status": "в работе"},
-#     {"id": 2, "title": "Протестировать API", "status": "не начато"},
-# ]
-
-JSON_FILE = "tasks.json"
-
-
-def load_tasks() -> List[Dict]:
-    try:
-        with open(JSON_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return []
-
-
-def save_tasks(tasks: List[Dict]):
-    with open(JSON_FILE, "w", encoding="utf-8") as f:
-        json.dump(tasks, f, ensure_ascii=False, indent=2)
-
-
-@app.get("/tasks")
+@app.get("/tasks", response_model=List[Dict])
 def get_tasks():
-    return load_tasks()
+    return task_storage.get_all_tasks()
 
 
 @app.post("/tasks")
 def create_task(new_task: Dict):
-    tasks = load_tasks()
-    tasks.append(new_task)
-    save_tasks(tasks)
+    task_storage.create_task(new_task)
     return {"message": "Задача успешно добавлена"}
 
 
 @app.put("/tasks/{task_id}")
 def update_task(task_id: int, updated_task: Dict):
-    tasks = load_tasks()
-    for task in tasks:
-        if task["id"] == task_id:
-            task.update(updated_task)
-            save_tasks(tasks)
-            return {"message": f"Задача № {task_id} успешно обновлена"}
-    return {"error": f"Задача с № {task_id} не найдена"}
+    if task_storage.update_task(task_id, update_task):
+        return {"message": f"Задача № {task_id} успешно обновлена"}
+    raise HTTPException(status_code=404, detail=f"Задача с № {task_id} не найдена")
 
 
 @app.delete("/tasks/{task_id}")
 def delete_task(task_id: int):
-    tasks = load_tasks()
-    for task in tasks:
-        if task["id"] == task_id:
-            tasks.remove(task)
-            save_tasks(tasks)
-            return {"message": f"Задача № {task_id} успешно удалена"}
-    return {"error": f"Задача с № {task_id} не найдена"}
+    if task_storage.delete_task(task_id):
+        return {"message": f"Задача № {task_id} успешно удалена"}
+    raise HTTPException(status_code=404, detail=f"Задача с № {task_id} не найдена")
