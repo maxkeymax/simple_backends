@@ -28,3 +28,12 @@ def update_task(task_id: int, updated_task: dict):
             task.update(updated_task)
             return {"message": f"Задача № {task_id} успешно обновлена"}
     return {"error": f"Задача с № {task_id} не найдена"}
+
+
+@app.delete('/tasks/{task_id}')
+def delete_task(task_id: int):
+    for task in tasks:
+        if task['id'] == task_id:
+            tasks.remove(task)
+            return {"message": f"Задача № {task_id} успешно удалена"}
+    return {"error": f"Задача с № {task_id} не найдена"}
