@@ -26,3 +26,27 @@ class JSONBinStorage:
                 },
             )
             self.bin_id = response.json()["metadata"]["id"]
+        else:
+            requests.put(
+                f"{self.base_url}/{self.bin_id}",
+                json=tasks,
+                headers={
+                    "Content-Type": "application/json",
+                    "X-Master-Key": self.master_key,
+                    "X-Access-Key": self.access_key,
+                },
+            )
+        
+    def load_tasks(self):
+        '''Загружает задачи из bin'''
+        if not self.bin_id:
+            return []
+        
+        response = requests.get(
+                f'{self.base_url}/{self.bin_id}/latest',
+                headers={
+                    "X-Master-Key": self.master_key,
+                    "X-Access-Key": self.access_key,
+                },
+            )
+        return response.json().get("record", [])
