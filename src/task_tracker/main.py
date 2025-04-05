@@ -1,12 +1,12 @@
 from typing import Dict, List
 
 from fastapi import FastAPI, HTTPException
-from .task_storage import TaskStorage
 from .jsonbin_storage import JSONBinStorage
+from .cloudflare_API import CloudflareAPI
 
 app = FastAPI()
-task_storage = TaskStorage("tasks.json")
 json_storage = JSONBinStorage()
+ai = CloudflareAPI()
 
 
 @app.get("/tasks", response_model=List[Dict])
@@ -16,6 +16,8 @@ def get_tasks():
 
 @app.post("/tasks")
 def create_task(new_task: Dict):
+    ai_resp = ai.get_llm_answer(new_task['Название'])
+    new_task['Совет от ИИ'] = ai_resp   
     tasks = json_storage.load_tasks()
     tasks.append(new_task)
     json_storage.save_tasks(tasks)
