@@ -30,6 +30,9 @@ def update_task(task_id: int, updated_task: Dict):
     tasks = json_storage.load_tasks()
     for task in tasks:
         if task["id"] == task_id:
+            if task["Название"] != updated_task["Название"]:
+                ai_resp = ai.get_llm_answer(updated_task["Название"])
+                updated_task["Совет от ИИ"] = ai_resp
             task.update(updated_task)
             json_storage.save_tasks(tasks)
             return {"message": f"Задача № {task_id} успешно обновлена"}
