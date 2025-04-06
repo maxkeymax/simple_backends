@@ -1,5 +1,7 @@
-import requests
 from abc import ABC, abstractmethod
+
+import requests
+
 
 class BaseHTTPClient(ABC):
     def __init__(self):
@@ -7,7 +9,9 @@ class BaseHTTPClient(ABC):
         self.headers = self.get_headers()
 
     def _send_request(self, method, url, data=None, json=None):
-        response = requests.request(method, url, headers=self.headers, data=data, json=json)
+        response = requests.request(
+            method, url, headers=self.headers, data=data, json=json
+        )
         response.raise_for_status()
         return response
 

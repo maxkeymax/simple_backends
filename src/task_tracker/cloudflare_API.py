@@ -1,16 +1,17 @@
 import os
 
-import requests
 from dotenv import load_dotenv
+
+from .base_http_client import BaseHTTPClient
 
 load_dotenv()
 
 
-class CloudflareAPI:
+class CloudflareAPI(BaseHTTPClient):
     def __init__(self):
-        self.base_url = f"https://api.cloudflare.com/client/v4/accounts/{os.getenv('Cloudflare_Account_ID')}/ai/run/"
-        self.headers = {"Authorization": f"Bearer {os.getenv('Cloudflare_API_Token')}"}
+        super().__init__()
         self.model = "@cf/meta/llama-3-8b-instruct"
+        self.cloudflare_api_token = os.getenv("Cloudflare_API_Token")
         self.inputs = [
             {
                 "role": "system",
@@ -22,15 +23,18 @@ class CloudflareAPI:
             },
         ]
 
+    def get_headers(self):
+        return {"Authorization": f"Bearer {os.getenv('Cloudflare_API_Token')}"}
+
+    def get_base_url(self):
+        return f"https://api.cloudflare.com/client/v4/accounts/{os.getenv('Cloudflare_Account_ID')}/ai/run/"
+
     def get_llm_answer(self, task):
         user_input_task = {"role": "user", "content": task}
         if len(self.inputs) > 2:
             self.inputs = self.inputs[:2]
         self.inputs.append(user_input_task)
-        response = requests.post(
-            f"{self.base_url}{self.model}",
-            headers=self.headers,
-            json={"messages": self.inputs}
+        response = self._send_request(
+            "POST", f"{self.get_base_url()}{self.model}", json={"messages": self.inputs}
         )
         return response.json()["result"]["response"]
-    

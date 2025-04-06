@@ -9,16 +9,14 @@ load_dotenv()
 
 class JSONBinStorage(BaseHTTPClient):
     def __init__(self):
-        super.__init__()
-        self.master_key = os.getenv("X_Master_Key")
-        self.access_key = os.getenv("X_Access_Key")
+        super().__init__()
         self.bin_id = None
 
     def get_headers(self):
         return {
             "Content-Type": "application/json",
-            "X-Master-Key": self.master_key,
-            "X-Access-Key": self.access_key,
+            "X-Master-Key": os.getenv("X_Master_Key"),
+            "X-Access-Key": os.getenv("X_Access_Key"),
         }
 
     def get_base_url(self):

@@ -1,8 +1,9 @@
 from typing import Dict, List
 
 from fastapi import FastAPI, HTTPException
-from .jsonbin_storage import JSONBinStorage
+
 from .cloudflare_API import CloudflareAPI
+from .jsonbin_storage import JSONBinStorage
 
 app = FastAPI()
 json_storage = JSONBinStorage()
@@ -16,8 +17,8 @@ def get_tasks():
 
 @app.post("/tasks")
 def create_task(new_task: Dict):
-    ai_resp = ai.get_llm_answer(new_task['Название'])
-    new_task['Совет от ИИ'] = ai_resp   
+    ai_resp = ai.get_llm_answer(new_task["Название"])
+    new_task["Совет от ИИ"] = ai_resp
     tasks = json_storage.load_tasks()
     tasks.append(new_task)
     json_storage.save_tasks(tasks)
@@ -28,7 +29,7 @@ def create_task(new_task: Dict):
 def update_task(task_id: int, updated_task: Dict):
     tasks = json_storage.load_tasks()
     for task in tasks:
-        if task['id'] == task_id:
+        if task["id"] == task_id:
             task.update(updated_task)
             json_storage.save_tasks(tasks)
             return {"message": f"Задача № {task_id} успешно обновлена"}
@@ -40,4 +41,3 @@ def delete_task(task_id: int):
     tasks = [task for task in json_storage.load_tasks() if task["id"] != task_id]
     json_storage.save_tasks(tasks)
     return {"message": f"Задача № {task_id} успешно удалена"}
-
