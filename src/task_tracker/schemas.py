@@ -4,6 +4,7 @@ from typing import Optional
 
 class TaskBase(BaseModel):
     """Базовая схема задачи"""
+    id: int
     title: str
     status: str = "к выполнению"
 
@@ -22,5 +23,4 @@ class TaskUpdate(BaseModel):
 
 class Task(TaskBase):
     """Полная схема задачи для ответа API"""
-    id: int
     ai_advice: Optional[str] = None
