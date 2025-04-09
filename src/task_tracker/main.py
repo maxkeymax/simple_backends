@@ -1,5 +1,5 @@
 from functools import lru_cache
-from typing import List
+from typing import Any, Dict, List
 
 from fastapi import Depends, FastAPI, HTTPException
 
@@ -14,7 +14,7 @@ error_logger = setup_logger()
 
 
 @lru_cache()
-def get_storage():
+def get_storage() -> JSONBinStorage:
     """Фабрика для создания экземпляра хранилища."""
     try:
         return JSONBinStorage()
@@ -24,7 +24,7 @@ def get_storage():
 
 
 @lru_cache()
-def get_ai_client():
+def get_ai_client() -> CloudflareAPI:
     """Фабрика для создания экземпляра AI-клиента."""
     try:
         return CloudflareAPI()
@@ -36,17 +36,19 @@ def get_ai_client():
 def get_task_service(
     storage: JSONBinStorage = Depends(get_storage),
     ai_client: CloudflareAPI = Depends(get_ai_client),
-):
+) -> TaskService:
     return TaskService(storage, ai_client)
 
 
 @app.get("/tasks", response_model=List[Task], tags=["Task list"])
-def get_tasks(task_service=Depends(get_task_service)):
+def get_tasks(task_service: TaskService = Depends(get_task_service)) -> List[Task]:
     return task_service.get_all_tasks()
 
 
 @app.post("/tasks", tags=["Add new task"])
-def create_task(new_task: TaskCreate, task_service=Depends(get_task_service)):
+def create_task(
+    new_task: TaskCreate, task_service: TaskService = Depends(get_task_service)
+) -> Dict[str, Any]:
     return task_service.create_task(new_task)
 
 
@@ -55,10 +57,12 @@ def update_task(
     task_id: int,
     task: TaskUpdate,
     task_service: TaskService = Depends(get_task_service),
-):
+) -> Task:
     return task_service.update_task(task_id, task)
 
 
 @app.delete("/tasks/{task_id}", tags=["Delete task"])
-def delete_task(task_id: int, task_service=Depends(get_task_service)):
+def delete_task(
+    task_id: int, task_service: TaskService = Depends(get_task_service)
+) -> Dict[str, Any]:
     return task_service.delete_task(task_id)

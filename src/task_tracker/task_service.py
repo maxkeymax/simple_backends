@@ -5,7 +5,7 @@ from fastapi import HTTPException
 from .cloudflare_API import CloudflareAPI
 from .jsonbin_storage import JSONBinStorage
 from .logging_config import setup_logger
-from .schemas import TaskCreate, TaskUpdate
+from .schemas import Task, TaskCreate, TaskUpdate
 
 error_logger = setup_logger()
 
@@ -17,7 +17,7 @@ class TaskService:
         self.storage = storage
         self.ai_client = ai_client
 
-    def get_all_tasks(self) -> List[Dict]:
+    def get_all_tasks(self) -> List[Task]:
         """Получение всех задач."""
         try:
             return self.storage.send_request()
@@ -55,7 +55,7 @@ class TaskService:
             error_logger.error(f"Ошибка при создании задачи: {str(e)}")
             raise HTTPException(status_code=500, detail="Ошибка при создании задачи")
 
-    def update_task(self, task_id: int, task_update: TaskUpdate) -> Dict:
+    def update_task(self, task_id: int, task_update: TaskUpdate) -> Task:
         """Обновление задачи."""
         try:
             tasks = self.storage.send_request()
