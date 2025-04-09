@@ -1,46 +1,71 @@
-from typing import Dict, List
+import logging
+from functools import lru_cache
+from typing import List
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
+from schemas import Task, TaskCreate, TaskUpdate
 
 from .cloudflare_API import CloudflareAPI
 from .jsonbin_storage import JSONBinStorage
+from .task_service import TaskService
 
 app = FastAPI()
-json_storage = JSONBinStorage()
-ai = CloudflareAPI()
+
+error_logger = logging.getLogger("error_only_logger")
+error_logger.setLevel(logging.ERROR)
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.ERROR)
+formatter = logging.Formatter("%(levelname)s: %(message)s")
+console_handler.setFormatter(formatter)
+error_logger.addHandler(console_handler)
 
 
-@app.get("/tasks", response_model=List[Dict])
-def get_tasks():
-    return json_storage.load_tasks()
+@lru_cache()
+def get_storage():
+    """Фабрика для создания экземпляра хранилища."""
+    try:
+        return JSONBinStorage()
+    except Exception as e:
+        error_logger.error(f"Ошибка инициализации JSONBinStorage: {str(e)}")
+        raise HTTPException(status_code=500, detail="Ошибка подключения к хранилищу")
 
 
-@app.post("/tasks")
-def create_task(new_task: Dict):
-    ai_resp = ai.get_llm_answer(new_task["Название"])
-    new_task["Совет от ИИ"] = ai_resp
-    tasks = json_storage.load_tasks()
-    tasks.append(new_task)
-    json_storage.save_tasks(tasks)
-    return {"message": "Задача успешно добавлена"}
+@lru_cache()
+def get_ai_client():
+    """Фабрика для создания экземпляра AI-клиента."""
+    try:
+        return CloudflareAPI()
+    except Exception as e:
+        error_logger.error(f"Ошибка инициализации CloudflareAPI: {str(e)}")
+        raise HTTPException(status_code=500, detail="Ошибка подключения к AI-сервису")
 
 
-@app.put("/tasks/{task_id}")
-def update_task(task_id: int, updated_task: Dict):
-    tasks = json_storage.load_tasks()
-    for task in tasks:
-        if task["id"] == task_id:
-            if task["Название"] != updated_task["Название"]:
-                ai_resp = ai.get_llm_answer(updated_task["Название"])
-                updated_task["Совет от ИИ"] = ai_resp
-            task.update(updated_task)
-            json_storage.save_tasks(tasks)
-            return {"message": f"Задача № {task_id} успешно обновлена"}
-    raise HTTPException(status_code=404, detail=f"Задача с № {task_id} не найдена")
+def get_task_service(
+    storage: JSONBinStorage = Depends(get_storage),
+    ai_client: CloudflareAPI = Depends(get_ai_client),
+):
+    return TaskService(storage, ai_client)
 
 
-@app.delete("/tasks/{task_id}")
-def delete_task(task_id: int):
-    tasks = [task for task in json_storage.load_tasks() if task["id"] != task_id]
-    json_storage.save_tasks(tasks)
-    return {"message": f"Задача № {task_id} успешно удалена"}
+@app.get("/tasks", response_model=List[Task], tags="Список всех задач")
+def get_tasks(task_service=Depends(get_task_service)):
+    return task_service.get_all_tasks()
+
+
+@app.post("/tasks", tags="Добавление новой задачи")
+def create_task(new_task: TaskCreate, task_service=Depends(get_task_service)):
+    return task_service.create_tusk(new_task)
+
+
+@app.put("/tasks/{task_id}", response_model=Task, tags="Обновление задачи")
+def update_task(
+    task_id: int,
+    task: TaskUpdate,
+    task_service: TaskService = Depends(get_task_service),
+):
+    return task_service.update_task(task_id, task)
+
+
+@app.delete("/tasks/{task_id}", tags="Удаление задачи")
+def delete_task(task_id: int, task_service=Depends(get_task_service)):
+    return task_service.delete_task(task_id)
