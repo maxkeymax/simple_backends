@@ -5,7 +5,7 @@ from fastapi import HTTPException
 
 from .cloudflare_API import CloudflareAPI
 from .jsonbin_storage import JSONBinStorage
-from .schemas import Task, TaskCreate, TaskUpdate
+from .schemas import TaskCreate, TaskUpdate
 
 error_logger = logging.getLogger("error_only_logger")
 error_logger.setLevel(logging.ERROR)
