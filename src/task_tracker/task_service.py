@@ -55,28 +55,33 @@ class TaskService:
             error_logger.error(f"Ошибка при создании задачи: {str(e)}")
             raise HTTPException(status_code=500, detail="Ошибка при создании задачи")
 
-    def update_task(self, task_id: int, task: TaskUpdate) -> Dict:
+    def update_task(self, task_id: int, task_update: TaskUpdate) -> Dict:
         """Обновление задачи."""
         try:
             tasks = self.storage.send_request()
 
             for t in tasks:
                 if t["id"] == task_id:
-                    # Проверяем, изменилось ли название
-                    if t["title"] != task.title:
-                        try:
-                            ai_resp = self.ai_client.send_request(task.title)
-                            t["ai_advice"] = ai_resp
-                        except Exception as e:
-                            error_logger.error(
-                                f"Ошибка при получении рекомендации от ИИ: {str(e)}"
-                            )
-                            # Оставляем прежнюю рекомендацию или обнуляем
+                    update_data = task_update.model_dump(exclude_unset=True)
 
-                    # Обновляем задачу
-                    t.update(task.model_dump(exclude_unset=True))
+                    if "title" in update_data:
+                        new_title = update_data["title"]
+                        if t["title"] != new_title:
+                            try:
+                                update_data["ai_advice"] = self.ai_client.send_request(
+                                    new_title
+                                )
+                            except Exception as e:
+                                error_logger.error(
+                                    f"Ошибка при получении рекомендации от ИИ: {str(e)}"
+                                )
+                                update_data["ai_advice"] = (
+                                    "Не удалось обновить рекомендацию"
+                                )
+
+                    t.update(update_data)
                     self.storage.save_tasks(tasks)
-                    return {"message": f"Задача № {task_id} успешно обновлена"}
+                    return t
 
             raise HTTPException(
                 status_code=404, detail=f"Задача с № {task_id} не найдена"
@@ -89,6 +94,7 @@ class TaskService:
         try:
             tasks = self.storage.send_request()
             old_len = len(tasks)
+            
             updated_tasks = [task for task in tasks if task["id"] != task_id]
 
             if old_len == len(updated_tasks):
@@ -96,7 +102,7 @@ class TaskService:
                     status_code=404, detail=f"Задача с № {task_id} не найдена"
                 )
 
-            self.storage.save_tasks(tasks)
+            self.storage.save_tasks(updated_tasks)
             return {"message": f"Задача № {task_id} успешно удалена"}
 
         except Exception as e:
