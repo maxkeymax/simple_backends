@@ -3,21 +3,15 @@ from functools import lru_cache
 from typing import List
 
 from fastapi import Depends, FastAPI, HTTPException
-from schemas import Task, TaskCreate, TaskUpdate
 
 from .cloudflare_API import CloudflareAPI
 from .jsonbin_storage import JSONBinStorage
+from .logging_config import setup_logger
+from .schemas import Task, TaskCreate, TaskUpdate
 from .task_service import TaskService
 
 app = FastAPI()
-
-error_logger = logging.getLogger("error_only_logger")
-error_logger.setLevel(logging.ERROR)
-console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.ERROR)
-formatter = logging.Formatter("%(levelname)s: %(message)s")
-console_handler.setFormatter(formatter)
-error_logger.addHandler(console_handler)
+error_logger = setup_logger()
 
 
 @lru_cache()

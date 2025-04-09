@@ -1,11 +1,14 @@
+import logging
 from typing import Dict, List
 
 from fastapi import HTTPException
 
 from .cloudflare_API import CloudflareAPI
 from .jsonbin_storage import JSONBinStorage
-from .main import error_logger
+from .logging_config import setup_logger
 from .schemas import TaskCreate, TaskUpdate
+
+error_logger = setup_logger()
 
 
 class TaskService:
