@@ -1,19 +1,11 @@
-import logging
 from typing import Dict, List
 
 from fastapi import HTTPException
 
 from .cloudflare_API import CloudflareAPI
 from .jsonbin_storage import JSONBinStorage
+from .main import error_logger
 from .schemas import TaskCreate, TaskUpdate
-
-error_logger = logging.getLogger("error_only_logger")
-error_logger.setLevel(logging.ERROR)
-console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.ERROR)
-formatter = logging.Formatter("%(levelname)s: %(message)s")
-console_handler.setFormatter(formatter)
-error_logger.addHandler(console_handler)
 
 
 class TaskService:
@@ -90,3 +82,21 @@ class TaskService:
         except Exception as e:
             error_logger.error(f"Ошибка при обновлении задачи: {str(e)}")
             raise HTTPException(status_code=500, detail="Ошибка при обновлении задачи")
+
+    def delete_task(self, task_id: int) -> Dict:
+        try:
+            tasks = self.storage.load_tasks()
+            old_len = len(tasks)
+            updated_tasks = [task for task in tasks if task["id"] != task_id]
+
+            if old_len == len(updated_tasks):
+                raise HTTPException(
+                    status_code=404, detail=f"Задача с № {task_id} не найдена"
+                )
+
+            self.storage.save_tasks(tasks)
+            return {"message": f"Задача № {task_id} успешно удалена"}
+
+        except Exception as e:
+            error_logger.error(f"Ошибка при удалении задачи: {str(e)}")
+            raise HTTPException(status_code=500, detail="Ошибка при удалении задачи")
