@@ -1,4 +1,3 @@
-import logging
 from typing import Dict, List
 
 from fastapi import HTTPException
@@ -21,7 +20,7 @@ class TaskService:
     def get_all_tasks(self) -> List[Dict]:
         """Получение всех задач."""
         try:
-            return self.storage.load_tasks()
+            return self.storage.send_request()
         except Exception as e:
             error_logger.error(f"Ошибка при загрузке задач: {str(e)}")
             raise HTTPException(status_code=500, detail="Ошибка при загрузке задач")
@@ -29,7 +28,7 @@ class TaskService:
     def create_task(self, task: TaskCreate) -> Dict:
         """Создание новой задачи с рекомендацией от ИИ."""
         try:
-            tasks = self.storage.load_tasks()
+            tasks = self.storage.send_request()
 
             # Генерация ID
             new_id = 1
@@ -42,7 +41,7 @@ class TaskService:
 
             # Получение рекомендации от ИИ
             try:
-                ai_resp = self.ai_client.get_llm_answer(task.title)
+                ai_resp = self.ai_client.send_request(task.title)
                 task_dict["ai_advice"] = ai_resp
             except Exception as e:
                 error_logger.error(f"Ошибка при получении рекомендации от ИИ: {str(e)}")
@@ -59,14 +58,14 @@ class TaskService:
     def update_task(self, task_id: int, task: TaskUpdate) -> Dict:
         """Обновление задачи."""
         try:
-            tasks = self.storage.load_tasks()
+            tasks = self.storage.send_request()
 
             for t in tasks:
                 if t["id"] == task_id:
                     # Проверяем, изменилось ли название
                     if t["title"] != task.title:
                         try:
-                            ai_resp = self.ai_client.get_llm_answer(task.title)
+                            ai_resp = self.ai_client.send_request(task.title)
                             t["ai_advice"] = ai_resp
                         except Exception as e:
                             error_logger.error(
@@ -88,7 +87,7 @@ class TaskService:
 
     def delete_task(self, task_id: int) -> Dict:
         try:
-            tasks = self.storage.load_tasks()
+            tasks = self.storage.send_request()
             old_len = len(tasks)
             updated_tasks = [task for task in tasks if task["id"] != task_id]
 

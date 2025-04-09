@@ -28,24 +28,3 @@ class CloudflareAPI(BaseHTTPClient):
         response = requests.post(url, headers=headers, json=msg_to_llm)
 
         return response.json()["result"]["response"]
-
-
-
-
-# def send_request(self, task):
-#     user_input_task = {"role": "user", "content": task}
-#     if len(self.inputs) > 2:
-#         self.inputs = self.inputs[:2]
-#     self.inputs.append(user_input_task)
-#     response = self._send_request(
-#         "POST", f"{self.get_base_url()}{self.model}", json={"messages": self.inputs}
-#     )
-#     return response.json()["result"]["response"]
-
-
-# def send_request(self, method, url, data=None, json=None):
-#     response = requests.request(
-#         method, url, headers=self.headers, data=data, json=json
-#     )
-#     response.raise_for_status()
-#     return response

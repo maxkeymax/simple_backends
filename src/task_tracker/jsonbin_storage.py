@@ -26,7 +26,7 @@ class JSONBinStorage(BaseHTTPClient):
         url = f"{self.get_base_url()}/{self.bin_id}/latest"
         headers = self.get_headers()
 
-        response = requests.post(url, headers=headers)
+        response = requests.get(url, headers=headers)
         return response.json().get("record", [])
 
     def save_tasks(self, tasks):
@@ -41,4 +41,3 @@ class JSONBinStorage(BaseHTTPClient):
             url = f"{self.get_base_url()}/{self.bin_id}"
             response = requests.put(url, headers=headers, json=tasks)
         return response.json().get("record", [])
-            
